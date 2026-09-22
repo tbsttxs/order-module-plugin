@@ -50,6 +50,10 @@ test('serves the workbench and proxies result downloads', async (t) => {
   const page = await fetch('http://127.0.0.1:8791/').then((response) => response.text());
   assert.match(page, /采购自动化工作台/);
   assert.match(page, /classList\.toggle\('disabled-link'/);
+  assert.match(page, /id="togglePassword"[^>]+aria-label="显示密码"/);
+  assert.match(page, /password\.type=show\?'text':'password'/);
+  assert.match(page, /input\[name=freshMode\]/);
+  assert.match(page, /确认并开始正式新品下单/);
 
   const legacyDownload = await fetch('http://127.0.0.1:8791/api/download/legacy/run-1');
   assert.equal(legacyDownload.status, 200);
