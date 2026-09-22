@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "description": "下单模块：老品下单与新品下单统一入口原型",
-  "scripts": {"start": "node server.mjs", "check": "node --check server.mjs"},
+  "scripts": {"start": "node server.mjs", "check": "node --check server.mjs", "test": "node --check server.mjs && node --test test/*.test.mjs && npm --prefix apps/legacy-order test"},
   "dependencies": {}
 }
