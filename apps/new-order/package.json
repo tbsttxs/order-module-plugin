@@ -1,0 +1,1 @@
+{"name":"sailvan-new-product-order-workbench","version":"0.1.0","private":true,"type":"module","description":"新品下单工作台本地原型","scripts":{"start":"node server.mjs","create-template":"node create-template.cjs"},"dependencies":{"keytar":"^7.9.0","playwright-core":"^1.55.0","xlsx":"^0.18.5"}}

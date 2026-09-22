@@ -1,0 +1,20 @@
+{
+  "name": "legacy-procurement-runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Supervised old-product procurement runner",
+  "type": "module",
+  "scripts": {
+    "dry-run": "node runner.mjs --mode=dry-run",
+    "test": "node --check runner.mjs && node --check server.mjs && node --test test/state-chain.test.mjs",
+    "run": "node runner.mjs --mode=full-production"
+  },
+  "dependencies": {
+    "exceljs": "4.4.0",
+    "express": "^4.21.2",
+    "keytar": "^7.9.0",
+    "multer": "^1.4.5-lts.1",
+    "playwright-core": "1.55.0",
+    "xlsx": "^0.18.5"
+  }
+}

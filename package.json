@@ -1,0 +1,9 @@
+{
+  "name": "order-module-plugin-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "下单模块：老品下单与新品下单统一入口原型",
+  "scripts": {"start": "node server.mjs", "check": "node --check server.mjs"},
+  "dependencies": {}
+}

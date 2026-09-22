@@ -1,0 +1,7 @@
+{
+  "cdpUrl": "http://127.0.0.1:9333",
+  "sheetName": "下单任务",
+  "mode": "dry-run",
+  "progressFile": "progress.json",
+  "pauseFile": "pause.flag"
+}

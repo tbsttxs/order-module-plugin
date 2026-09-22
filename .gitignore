@@ -1,0 +1,12 @@
+node_modules/
+apps/*/node_modules/
+apps/*/uploads/
+apps/*/settings.json
+apps/*/config.json
+apps/*/progress.json
+apps/*/state.json
+apps/*/runs/
+apps/*/results/
+apps/*/output/
+apps/*/Chrome Profile/
+*.log
