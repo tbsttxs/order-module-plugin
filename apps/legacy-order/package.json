@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dry-run": "node runner.mjs --mode=dry-run",
-    "test": "node --check runner.mjs && node --check server.mjs && node --test test/state-chain.test.mjs",
+    "test": "node --check runner.mjs && node --check server.mjs && node --test test/*.test.mjs",
     "run": "node runner.mjs --mode=full-production"
   },
   "dependencies": {

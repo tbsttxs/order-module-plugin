@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import XLSX from 'xlsx';
 import { chromium } from 'playwright-core';
 import { beijingNow, resultFileName, writeJson } from './lib/state.mjs';
+import { waitForApprovedStatus } from './lib/approval.mjs';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
 const configPath=path.join(root,'config.json');
@@ -79,6 +80,7 @@ async function ensureSingleAndLocate(page,context,task){
  const row=page.locator('table tbody tr').filter({hasText:task.sku}).first(); const text=await row.innerText(); if(!text.includes('未处理'))throw new Error(`第一条结果不是未处理：${text.replace(/\s+/g,' ').slice(0,260)}`);
  const dm=(text.match(/DM\d+/)||[])[0]; if(!dm)throw new Error('未能解析采购需求编号 DM。'); return {page,row,dm,text};
 }
+async function readApprovedRow(context,page,pp){const list=context.pages().find(p=>p.url().includes('purchaseDemandProject')&&p.url().includes('act=index'))||page;const readRow=async()=>{const row=list.locator('table tbody tr').filter({hasText:pp}).first();return await row.count()?row.innerText():''};const finalRow=await waitForApprovedStatus({readRow,refresh:()=>list.reload({waitUntil:'domcontentloaded',timeout:15000}).catch(()=>{}),wait:ms=>list.waitForTimeout(ms)});return {list,finalRow}}
 async function fullRun(page,context,task,item){
  checkpoint('已定位采购需求',item); const found=await ensureSingleAndLocate(page,context,task); page=found.page; item.dm=found.dm; item.step='需求已定位';
  await found.row.locator('input[name=checkArr]').check({force:true}); if(await page.locator('input[name=checkArr]:checked').count()!==1)throw new Error('未能确保只勾选第一条需求。');
@@ -95,7 +97,7 @@ async function fullRun(page,context,task,item){
  const submitted=await page.locator('table tbody tr').filter({hasText:pp}).first().innerText(); if(!submitted.includes('待审核'))throw new Error('提交后状态未变为待审核。');
  checkpoint('正在审核采购计划',item); const [audit]=await Promise.all([context.waitForEvent('page'),page.locator('table tbody tr').filter({hasText:pp}).first().getByText('审核',{exact:true}).click()]); await audit.waitForLoadState('domcontentloaded').catch(()=>{}); await audit.waitForTimeout(500);
  await audit.locator('input[name=audit_status][value="1"]').check({force:true}); await audit.locator('#audit').click(); const confirm=audit.locator('.layui-layer:visible').filter({hasText:'是否审核这个采购计划'}); await confirm.locator('.layui-layer-btn0').click(); await audit.waitForTimeout(900);
- const list=context.pages().find(p=>p.url().includes('purchaseDemandProject')&&p.url().includes('act=index'))||page; const finalRow=await list.locator('table tbody tr').filter({hasText:pp}).first().innerText(); if(!finalRow.includes('审核通过'))throw new Error('最终状态未回读到审核通过。'); item.finalRow=finalRow.replace(/\s+/g,' ').trim(); item.step='审核通过'; report('本行审核通过',{row:task.r,sku:task.sku,pp});
+ const verified=await readApprovedRow(context,page,pp); const list=verified.list; const finalRow=verified.finalRow; item.finalRow=finalRow; item.step='审核通过'; report('本行审核通过',{row:task.r,sku:task.sku,pp});
 }
 const browser=await chromium.connectOverCDP(config.cdpUrl); const context=browser.contexts()[0]; let page=context.pages().find(p=>p.url().includes('purchase.valsun.cn'))||context.pages()[0]; if(!page)throw new Error('未发现已登录采购系统页面。');
 report('开始执行',{total:rows.length}); for(const task of rows){page=context.pages().find(p=>p.url().includes('purchase.valsun.cn')&&!p.url().includes('act=audit'))||page; const item={row:task.r,sku:task.sku,quantity:task.qty,mode,status:'处理中',startedAt:now()}; update(task.r,{执行结果:'处理中',开始时间:item.startedAt,异常说明:''}); try{if(mode==='dry-run'){const r=await ensureSingleAndLocate(page,context,task); page=r.page;item.dm=r.dm;item.firstResult=r.text.replace(/\s+/g,' ').trim();item.status='只读校验通过';update(task.r,{执行结果:'只读校验通过',采购需求编号:r.dm,异常说明:'已定位“精确料号 + 未处理 + 第一条”；未创建采购记录。'});}else{await fullRun(page,context,task,item);item.status='成功';update(task.r,{执行结果:'成功',采购需求编号:item.dm,采购计划号:item.pp,异常说明:'无异常；已完成分仓、生成、提交与审核。'});} }catch(e){item.status=e?.code==='PAUSED'?'已暂停':'异常';item.error=errorText(e);const point=item.currentStep||item.step||'进入采购流程';item.blockPoint=point;update(task.r,{执行结果:item.status,异常说明:`阻塞环节：${point}；原因：${item.error}`});item.screenshot=await evidence(page,path.join(runDir,'screenshots',`row-${task.r}-${task.sku}-exception.png`));}finally{item.endedAt=now();update(task.r,{结束时间:item.endedAt});ledger.push(item); report(item.status==='成功'?'本行完成':item.status==='已暂停'?'任务已暂停':'本行异常',{row:task.r,sku:task.sku,status:item.status}); for(const p of context.pages()){if(p!==page&&p.url().includes('purchase.valsun.cn')&&p.url().includes('act=audit')) await p.close().catch(()=>{});} } if(item.status==='已暂停') break; }

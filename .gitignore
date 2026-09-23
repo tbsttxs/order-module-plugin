@@ -10,3 +10,4 @@ apps/*/results/
 apps/*/output/
 apps/*/Chrome Profile/
 *.log
+dist/

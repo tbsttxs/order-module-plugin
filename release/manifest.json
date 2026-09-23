@@ -1,0 +1,12 @@
+{
+  "id": "order-module",
+  "name": "下单工作台",
+  "version": "0.1.0-pilot",
+  "channel": "pilot",
+  "platform": "windows-x64",
+  "entry": "start-workbench.cmd",
+  "health": "http://127.0.0.1:8791/health",
+  "ports": [8791, 8790, 8787, 9333],
+  "credentialPolicy": "per-user-windows-credential-manager",
+  "browserPolicy": "per-user-dedicated-chrome-profile"
+}

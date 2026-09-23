@@ -22,6 +22,7 @@ const server=http.createServer(async(req,res)=>{try{
  if(req.method==='GET'&&req.url==='/api/account')return json(res,200,{credentialSaved:!!await credential()});
  if(req.method==='POST'&&req.url==='/api/account'){const b=await readJson(req),username=String(b.username||'').trim(),password=String(b.password||'');if(!username||!password)return json(res,400,{error:'请同时填写采购账号和密码。'});if(b.save)await keytar.setPassword(VAULT_SERVICE,VAULT_ACCOUNT,JSON.stringify({username,password}));return json(res,200,{ok:true,saved:!!b.save})}
  if(req.method==='DELETE'&&req.url==='/api/account'){await keytar.deletePassword(VAULT_SERVICE,VAULT_ACCOUNT);return json(res,200,{ok:true})}
+ if(req.method==='POST'&&req.url==='/api/login'){const b=await readJson(req);let username=String(b.username||'').trim(),password=String(b.password||'');if(!username||!password){const saved=await credential();username=String(saved?.username||'').trim();password=String(saved?.password||'')}if(!username||!password)return json(res,400,{error:'请填写采购账号和密码。'});await start('fresh');const upstream=await fetch(`${base('fresh')}/api/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password}),signal:AbortSignal.timeout(120000)});return json(res,upstream.status,await upstream.json())}
 
  const downloadMatch=req.url?.match(/^\/api\/download\/(legacy|fresh)\/([^/?#]+)$/);if(req.method==='GET'&&downloadMatch)return proxyDownload(downloadMatch[1],decodeURIComponent(downloadMatch[2]),res);
 

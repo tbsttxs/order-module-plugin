@@ -33,6 +33,10 @@ test('serves the workbench and proxies result downloads', async (t) => {
   });
   const fresh = await listen(8790, (req, res) => {
     if (req.url === '/health') return void res.end('{}');
+    if (req.url === '/api/login' && req.method === 'POST') {
+      res.writeHead(200, {'content-type':'application/json'});
+      return void res.end(JSON.stringify({ok:true,message:'login-forwarded'}));
+    }
     if (req.url === '/api/download/run-2') {
       res.writeHead(200, {'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="result.csv"'});
       return void res.end('fresh-result');
@@ -54,6 +58,16 @@ test('serves the workbench and proxies result downloads', async (t) => {
   assert.match(page, /password\.type=show\?'text':'password'/);
   assert.match(page, /input\[name=freshMode\]/);
   assert.match(page, /确认并开始正式新品下单/);
+  assert.match(page, /id="loginAccount"/);
+  assert.match(page, /api\('\/api\/login'/);
+
+  const login = await fetch('http://127.0.0.1:8791/api/login', {
+    method: 'POST',
+    headers: {'content-type':'application/json'},
+    body: JSON.stringify({username:'test-user',password:'test-password'}),
+  });
+  assert.equal(login.status, 200);
+  assert.equal((await login.json()).message, 'login-forwarded');
 
   const legacyDownload = await fetch('http://127.0.0.1:8791/api/download/legacy/run-1');
   assert.equal(legacyDownload.status, 200);
